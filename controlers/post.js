@@ -7,14 +7,24 @@ export const getPosts = (req, res) => {
     : "SELECT * FROM posts";
 
   db.query(q, [req.query.cat], (err, data) => {
-    if (err) return res.send(err);
+    if (err) return res.status(500).json(err);
 
     return res.status(200).json(data);
   });
 };
 
 //fetch a single post
-export const getPost = (req, res) => {};
+export const getPost = (req, res) => {
+  const { id } = req.params;
+
+  const q = "SELECT * FROM posts WHERE id=?";
+
+  db.query(q, [id], (err, data) => {
+    if (err) return res.status(500).json(err);
+
+    return res.status(200).json(data);
+  });
+};
 
 //add a post
 export const addPost = (req, res) => {
