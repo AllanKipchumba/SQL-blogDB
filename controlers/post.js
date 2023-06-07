@@ -37,9 +37,21 @@ export const addPost = (req, res) => {
   db.query(q, [values], (err, data) => {
     if (err) return res.status(500).json(err);
 
+    return res.status(201).json(data);
+  });
+};
+
+//delete a single post
+export const deletePost = (req, res) => {
+  const { id } = req.params;
+
+  const q = "DELETE FROM posts WHERE id=?";
+
+  db.query(q, [id], (err, data) => {
+    if (err) return res.status(500).json(err);
+
     return res.status(200).json(data);
   });
 };
-export const deletePost = (req, res) => {};
 
 export const updatePost = (req, res) => {};
