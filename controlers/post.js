@@ -21,7 +21,7 @@ export const getPost = (req, res) => {
 
   //return post and the user that published the post
   const q =
-    "SELECT  `username`, `title`, `desc`, `cat`, `date` FROM users u JOIN posts p ON u.id = p.uid WHERE p.id = ?";
+    "SELECT  `username`, `title`, `description`, `cat`, `date` FROM users u JOIN posts p ON u.id = p.uid WHERE p.id = ?";
 
   db.query(q, [id], (err, data) => {
     if (err) return res.status(500).json(err);
@@ -35,7 +35,7 @@ export const addPost = (req, res) => {
   const { title, desc, date, cat, uid } = req.body;
 
   const q =
-    "INSERT INTO posts (`title`, `desc`, `date`, `uid`, `cat`) VALUES (?)";
+    "INSERT INTO posts (`title`, `description`, `date`, `uid`, `cat`) VALUES (?)";
   const values = [title, desc, date, uid, cat];
 
   db.query(q, [values], (err, data) => {
@@ -61,7 +61,7 @@ export const deletePost = (req, res) => {
 
       switch (data.affectedRows) {
         case 0:
-          res.status(403).json("you can only delete your post");
+          res.status(403).json("There was an error!!");
           break;
         default:
           res.status(200).json("post deleted");
@@ -71,4 +71,25 @@ export const deletePost = (req, res) => {
   });
 };
 
-export const updatePost = (req, res) => {};
+//UPDATE POST
+export const updatePost = (req, res) => {
+  const token = req.cookies.access_token;
+  if (!token) return res.status(401).json("Not authenticated!");
+
+  jwt.verify(token, jwt_secret, (err, userInfo) => {
+    if (err) return res.status(403).json("Token is not valid!");
+
+    const { id: postID } = req.params;
+    const keys = Object.keys(req.body);
+    const values = Object.values(req.body);
+
+    const updates = keys.map((key) => `${key} = ?`).join(", ");
+    const q = `UPDATE posts SET ${updates} WHERE id = ? AND uid = ?`;
+
+    db.query(q, [...values, postID, userInfo.id], (err, data) => {
+      if (err) return res.status(500).json(err);
+
+      return res.status(200).json(data);
+    });
+  });
+};
