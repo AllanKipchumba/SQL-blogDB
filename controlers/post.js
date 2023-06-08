@@ -1,4 +1,6 @@
+import { jwt_secret } from "../configs/config.js";
 import { db } from "../db.js";
+import jwt from "jsonwebtoken";
 
 //fetch all posts
 export const getPosts = (req, res) => {
@@ -17,7 +19,9 @@ export const getPosts = (req, res) => {
 export const getPost = (req, res) => {
   const { id } = req.params;
 
-  const q = "SELECT * FROM posts WHERE id=?";
+  //return post and the user that published the post
+  const q =
+    "SELECT  `username`, `title`, `desc`, `cat`, `date` FROM users u JOIN posts p ON u.id = p.uid WHERE p.id = ?";
 
   db.query(q, [id], (err, data) => {
     if (err) return res.status(500).json(err);
@@ -43,14 +47,27 @@ export const addPost = (req, res) => {
 
 //delete a single post
 export const deletePost = (req, res) => {
-  const { id } = req.params;
+  const { id: postID } = req.params;
+  const token = req.cookies.access_token;
 
-  const q = "DELETE FROM posts WHERE id=?";
+  //post owner can only delete the post
+  jwt.verify(token, jwt_secret, (err, userInfo) => {
+    if (err) return res.status(403).json("Token is not valid");
 
-  db.query(q, [id], (err, data) => {
-    if (err) return res.status(500).json(err);
+    const q = "DELETE FROM posts WHERE id=? and uid = ?";
 
-    return res.status(200).json(data);
+    db.query(q, [postID, userInfo.id], (err, data) => {
+      if (err) return res.status(403).json(err);
+
+      switch (data.affectedRows) {
+        case 0:
+          res.status(403).json("you can only delete your post");
+          break;
+        default:
+          res.status(200).json("post deleted");
+          break;
+      }
+    });
   });
 };
 
